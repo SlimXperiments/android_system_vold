@@ -270,8 +270,7 @@ int Volume::createDeviceNode(const char *path, int major, int minor) {
 }
 
 int Volume::formatVol(bool wipe) {
-
-    char* fstype = NULL;
+    const char* fstype = NULL;
 
     if (getState() == Volume::State_NoMedia) {
         errno = ENODEV;
@@ -327,6 +326,10 @@ int Volume::formatVol(bool wipe) {
     }
 
     fstype = getFsType((const char*)devicePath);
+    if (fstype == NULL) {
+        // Default to vfat
+        fstype = "vfat";
+    }
     if (strcmp(fstype, "exfat") == 0) {
         if (Exfat::format(devicePath)) {
             SLOGE("Failed for format (%s) as exfat", strerror(errno));
@@ -542,7 +545,7 @@ int Volume::mountVol() {
                 }
 
                 if (Exfat::doMount(devicePath, "/mnt/secure/staging", false, false, false,
-                        AID_SYSTEM, gid, 0702)) {
+                        AID_SYSTEM, gid, 0702,true)) {
                     SLOGE("%s failed to mount via EXFAT (%s)\n", devicePath, strerror(errno));
                     continue;
                 }
